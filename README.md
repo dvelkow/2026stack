@@ -37,7 +37,3 @@ NAC, L-theanine, and boron are included because they may add useful upside in sp
 ## Files
 
 - `2026stack.html` - the interactive stack readout and effect timeline.
-
-## Disclaimer
-
-This is a personal tracking and visualization project, not medical advice. The estimates in the HTML are directional and experimental, not clinical claims. Anyone considering supplements should do their own research and talk to a qualified medical professional when appropriate.
