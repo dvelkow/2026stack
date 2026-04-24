@@ -1,0 +1,1750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STACK READOUT · DOBROMIR / 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:            #0B0A08;
+    --bg-elevated:   #12100D;
+    --bg-card:       #17140F;
+    --border:        #2A2520;
+    --border-hot:    #3D342B;
+    --text:          #F2EADA;
+    --text-dim:      #8C8376;
+    --text-mute:     #554F46;
+    --amber:         #E4B363;
+    --amber-hot:     #F5C978;
+    --burnt:         #D85D3B;
+    --cool:          #6A9FB5;
+    --green:         #8FA878;
+    --highlight:     #F5C978;
+    --highlight-bg:  rgba(245, 201, 120, 0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background:
+      repeating-linear-gradient(
+        0deg,
+        rgba(255, 255, 255, 0.015) 0px,
+        rgba(255, 255, 255, 0.015) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+    mix-blend-mode: overlay;
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%);
+  }
+
+  .container {
+    position: relative;
+    z-index: 10;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 56px 40px 120px;
+  }
+
+  header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 28px;
+    margin-bottom: 56px;
+    animation: fadeUp 0.8s ease-out both;
+  }
+
+  .brand { display: flex; flex-direction: column; gap: 6px; }
+
+  .brand .glyph {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--amber);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .brand h1 {
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    font-size: 62px;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  .brand h1 em { font-style: italic; color: var(--amber); }
+
+  .brand .sub {
+    color: var(--text-dim);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  .meta {
+    text-align: right;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    line-height: 1.9;
+  }
+
+  .meta span { color: var(--amber); }
+  .meta .status { display: inline-flex; align-items: center; gap: 6px; }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .summary {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 32px;
+    align-items: center;
+    padding: 20px 24px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    margin-bottom: 40px;
+    animation: fadeUp 0.9s ease-out 0.1s both;
+  }
+
+  .summary-label {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .summary-value {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 22px;
+    color: var(--amber);
+  }
+
+  .summary-items { font-size: 11px; color: var(--text-dim); letter-spacing: 0.05em; }
+  .summary-items strong { color: var(--text); font-weight: 500; }
+
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-mute);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .stats { display: flex; flex-direction: column; gap: 8px; }
+
+  .stat {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 22px 28px;
+    cursor: pointer;
+    transition: all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--amber);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .stat:hover, .stat.open {
+    background: var(--bg-elevated);
+    border-color: var(--border-hot);
+  }
+
+  .stat:hover::before, .stat.open::before {
+    transform: scaleY(1);
+  }
+
+  .stat-header {
+    display: grid;
+    grid-template-columns: 70px 1fr auto;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .stat-index { font-size: 11px; color: var(--text-mute); letter-spacing: 0.1em; }
+
+  .stat-title { display: flex; flex-direction: column; gap: 4px; }
+
+  .stat-title .name {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 28px;
+    line-height: 1;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+
+  .stat-title .tagline {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.03em;
+  }
+
+  .stat-value {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+  }
+
+  .stat-value .num {
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--amber);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat-value .delta {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .bar {
+    margin-top: 18px;
+    height: 2px;
+    background: var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: var(--amber);
+    width: 0;
+    transition: width 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 0 8px rgba(228, 179, 99, 0.5);
+  }
+
+  .detail {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .stat:hover .detail, .stat.open .detail {
+    grid-template-rows: 1fr;
+  }
+
+  .detail-inner { overflow: hidden; }
+
+  .detail-grid {
+    margin-top: 26px;
+    padding-top: 22px;
+    border-top: 1px dashed var(--border);
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px 36px;
+  }
+
+  .sub {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    gap: 12px;
+    padding: 6px 10px;
+    margin: 0 -10px;
+    border-bottom: 1px dotted var(--border);
+    transition: all 0.25s ease;
+    border-radius: 2px;
+  }
+
+  .sub-name {
+    font-size: 12px;
+    color: var(--text);
+    transition: color 0.25s ease;
+  }
+
+  .sub-val {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--amber);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+    transition: color 0.25s ease;
+  }
+
+  .sub-val.neg { color: var(--cool); }
+
+  /* HIGHLIGHT (matching a selected chip) */
+  .sub.highlight {
+    background: var(--highlight-bg);
+    border-bottom-color: var(--highlight);
+    box-shadow: inset 2px 0 0 var(--highlight);
+  }
+
+  .sub.highlight .sub-name { color: var(--highlight); }
+
+  .sub.highlight .sub-val {
+    color: var(--highlight);
+    text-shadow: 0 0 8px rgba(245, 201, 120, 0.4);
+  }
+
+  /* DIMMED (non-matching when a chip is active) */
+  .sub.dimmed { opacity: 0.3; }
+
+  .sources {
+    grid-column: 1 / -1;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .sources-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-mute);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .sources-label::after {
+    content: "click to trace →";
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: var(--amber);
+    opacity: 0.7;
+  }
+
+  .sources-list { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .chip {
+    font-size: 10px;
+    padding: 4px 10px;
+    background: transparent;
+    border: 1px solid var(--border-hot);
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+    font-family: inherit;
+  }
+
+  .chip:hover {
+    border-color: var(--amber);
+    color: var(--amber);
+  }
+
+  .chip.active {
+    background: var(--highlight);
+    color: var(--bg);
+    border-color: var(--highlight);
+    box-shadow: 0 0 12px rgba(245, 201, 120, 0.4);
+  }
+
+  footer {
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-mute);
+  }
+
+  footer em {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    color: var(--amber);
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    text-transform: none;
+  }
+
+  .timeline {
+    margin: 48px 0;
+    padding: 28px 0;
+    animation: fadeUp 0.9s ease-out 0.2s both;
+  }
+
+  .timeline-track {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    padding-top: 24px;
+  }
+
+  .timeline-track::before {
+    content: "";
+    position: absolute;
+    top: 34px;
+    left: 10%; right: 10%;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .tp {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    padding: 0 8px;
+  }
+
+  .tp-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1.5px solid var(--amber);
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .tp:nth-child(1) .tp-dot { background: var(--amber); }
+
+  .tp-time {
+    font-size: 10px;
+    color: var(--amber);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  .tp-text { font-size: 11px; color: var(--text-dim); line-height: 1.4; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .stat { opacity: 0; animation: fadeUp 0.6s ease-out forwards; }
+  .stat:nth-child(1) { animation-delay: 0.15s; }
+  .stat:nth-child(2) { animation-delay: 0.22s; }
+  .stat:nth-child(3) { animation-delay: 0.29s; }
+  .stat:nth-child(4) { animation-delay: 0.36s; }
+  .stat:nth-child(5) { animation-delay: 0.43s; }
+  .stat:nth-child(6) { animation-delay: 0.50s; }
+  .stat:nth-child(7) { animation-delay: 0.57s; }
+
+  @media (max-width: 720px) {
+    .container { padding: 32px 20px 80px; }
+    .brand h1 { font-size: 40px; }
+    header { grid-template-columns: 1fr; gap: 16px; }
+    .meta { text-align: left; }
+    .summary { grid-template-columns: 1fr; gap: 12px; }
+    .stat-header { grid-template-columns: 1fr auto; gap: 12px; }
+    .stat-index { display: none; }
+    .stat-title .name { font-size: 22px; }
+    .stat-value .num { font-size: 22px; }
+    .detail-grid { grid-template-columns: 1fr; gap: 8px 0; }
+    .timeline-track { grid-template-columns: repeat(2, 1fr); gap: 24px 0; }
+    .timeline-track::before { display: none; }
+    .sources-label::after { display: none; }
+  }
+
+  .hover-hint {
+    font-size: 10px;
+    color: var(--text-mute);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    text-align: right;
+  }
+
+  .hover-hint span {
+    color: var(--amber);
+    padding: 0 8px;
+    border-left: 1px solid var(--border);
+    margin-left: 8px;
+  }
+
+  /* ============================================================= */
+  /* ==================  INTRODUCTION DROPDOWN  =================== */
+  /* ============================================================= */
+
+  .intro-v2 {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    margin-bottom: 10px;
+    animation: fadeUp 0.9s ease-out 0.08s both;
+    cursor: help;
+    transition: border-color 0.3s ease;
+  }
+
+  .intro-v2:hover,
+  .intro-v2:focus-within,
+  .intro-v2.open { border-color: var(--border-hot); }
+
+  .intro-v2-trigger-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 24px;
+    border-bottom: 1px solid transparent;
+    transition: border-bottom-color 0.3s ease;
+  }
+
+  .intro-v2-label {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--amber);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    transition: color 0.25s ease;
+    user-select: none;
+  }
+
+  .intro-v2-chevron {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--amber);
+    opacity: 0.55;
+    transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
+  }
+
+  .intro-v2:hover .intro-v2-label,
+  .intro-v2:focus-within .intro-v2-label,
+  .intro-v2.open .intro-v2-label { color: var(--amber-hot); }
+
+  .intro-v2:hover .intro-v2-chevron,
+  .intro-v2:focus-within .intro-v2-chevron,
+  .intro-v2.open .intro-v2-chevron { transform: rotate(180deg); opacity: 1; }
+
+  .intro-v2:hover .intro-v2-trigger-row,
+  .intro-v2:focus-within .intro-v2-trigger-row,
+  .intro-v2.open .intro-v2-trigger-row { border-bottom-color: var(--border); }
+
+  .intro-v2-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.42s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .intro-v2:hover .intro-v2-panel,
+  .intro-v2:focus-within .intro-v2-panel,
+  .intro-v2.open .intro-v2-panel { grid-template-rows: 1fr; }
+
+  .intro-v2-panel-inner {
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .intro-v2-body {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 32px;
+    align-items: center;
+    padding: 16px 24px 18px;
+  }
+
+  @media (max-width: 720px) {
+    .intro-v2-trigger-row { padding: 10px 18px; }
+    .intro-v2-body { grid-template-columns: 1fr; gap: 12px; padding: 14px 18px; }
+  }
+
+  /* ============================================================= */
+  /* ===============   UPGRADED BUFF TIMELINE   =================== */
+  /* ============================================================= */
+
+  .timeline-v2 {
+    margin: 12px 0 8px;
+    animation: fadeUp 0.9s ease-out 0.2s both;
+  }
+
+  .tl-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 14px;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .tl-label {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 19px;
+    color: var(--amber);
+    letter-spacing: -0.01em;
+  }
+
+  .tl-hint {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-mute);
+  }
+
+  .tl-hint span {
+    color: var(--amber);
+    padding: 0 8px;
+    border-left: 1px solid var(--border);
+    margin-left: 8px;
+  }
+
+  .tl-chart {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 16px 18px 12px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+
+  .tl-chart svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    font-family: 'JetBrains Mono', monospace;
+    overflow: visible;
+  }
+
+  .tl-chart .grid-line {
+    stroke: var(--border);
+    stroke-width: 0.5;
+    stroke-dasharray: 2 4;
+  }
+
+  .tl-chart .grid-axis {
+    stroke: var(--border-hot);
+    stroke-width: 1;
+  }
+
+  .tl-chart .axis-tick {
+    fill: var(--text-mute);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+
+  .tl-chart .axis-label {
+    fill: var(--text-dim);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .tl-chart .compound-line {
+    fill: none;
+    stroke: var(--amber);
+    stroke-width: 1;
+    opacity: 0.18;
+    transition: opacity 0.3s ease, stroke-width 0.3s ease, stroke 0.3s ease;
+    pointer-events: none;
+  }
+
+  .tl-chart .aggregate-line {
+    fill: none;
+    stroke: var(--amber-hot);
+    stroke-width: 2.5;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+    filter: drop-shadow(0 0 5px rgba(245, 201, 120, 0.35));
+    pointer-events: none;
+  }
+
+  .tl-chart.traced .compound-line { opacity: 0.06; }
+  .tl-chart.traced .aggregate-line { opacity: 0; }
+  .tl-chart.traced .compound-line.active {
+    opacity: 1;
+    stroke-width: 2.5;
+    stroke: var(--highlight);
+    filter: drop-shadow(0 0 7px rgba(245, 201, 120, 0.55));
+  }
+
+  .tl-chart .now-line {
+    stroke: var(--green);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+    opacity: 0.6;
+  }
+
+  .tl-chart .now-label {
+    fill: var(--green);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .tl-chart .checkpoints { opacity: 0; transition: opacity 0.35s ease; pointer-events: none; }
+  .tl-chart.traced .checkpoints { opacity: 1; }
+
+  .tl-chart .cp-line {
+    stroke: var(--highlight);
+    stroke-width: 0.5;
+    stroke-dasharray: 2 3;
+    opacity: 0.45;
+  }
+
+  .tl-chart .cp-dot-outer {
+    fill: var(--bg);
+    stroke: var(--highlight);
+    stroke-width: 1.5;
+  }
+
+  .tl-chart .cp-dot-inner {
+    fill: var(--highlight);
+  }
+
+  .tl-chart .cp-label {
+    fill: var(--highlight);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+
+  .tl-chart .cp-label-sub {
+    fill: var(--text-dim);
+    font-size: 8.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* Readout row */
+  .tl-readout {
+    display: grid;
+    grid-template-columns: auto 1fr repeat(5, minmax(82px, auto));
+    gap: 0;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    padding: 12px 18px;
+    margin-bottom: 14px;
+    align-items: center;
+  }
+
+  .ro-label {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-mute);
+    padding-right: 18px;
+    border-right: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .ro-name {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 19px;
+    color: var(--amber);
+    padding: 0 18px;
+    line-height: 1.1;
+    transition: color 0.25s ease;
+  }
+
+  .tl-chart.traced + .tl-readout .ro-name { color: var(--highlight); }
+
+  .ro-cp {
+    padding: 2px 10px;
+    border-left: 1px dotted var(--border);
+    text-align: center;
+    min-width: 82px;
+  }
+
+  .ro-cp-pct {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-mute);
+    margin-bottom: 3px;
+  }
+
+  .ro-cp-val {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--amber);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+  }
+
+  .ro-cp-val.now-val {
+    color: var(--green);
+    text-shadow: 0 0 5px rgba(143, 168, 120, 0.3);
+  }
+
+  .ro-cp-val.past { color: var(--text-dim); opacity: 0.55; }
+  .ro-cp-val.future { color: var(--amber); }
+
+  .ro-cp-input-wrap .ro-cp-pct {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .ro-cp-input-wrap input {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border-hot);
+    color: var(--amber);
+    width: 36px;
+    text-align: center;
+    padding: 1px 2px;
+    letter-spacing: 0.04em;
+    outline: none;
+    transition: border-color 0.22s ease, color 0.22s ease, background 0.22s ease;
+    -moz-appearance: textfield;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ro-cp-input-wrap input::-webkit-outer-spin-button,
+  .ro-cp-input-wrap input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .ro-cp-input-wrap input:hover {
+    border-bottom-color: var(--amber);
+    color: var(--amber-hot);
+  }
+
+  .ro-cp-input-wrap input:focus {
+    border-bottom-color: var(--highlight);
+    color: var(--highlight);
+    background: var(--highlight-bg);
+  }
+
+  /* Chips */
+  .tl-chips {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+    gap: 5px;
+  }
+
+  .tl-chip {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 8px 11px;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    font-family: 'JetBrains Mono', monospace;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    position: relative;
+    user-select: none;
+  }
+
+  .tl-chip::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--highlight);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 0.25s ease;
+  }
+
+  .tl-chip:hover {
+    background: var(--bg-elevated);
+    border-color: var(--border-hot);
+  }
+
+  .tl-chip:hover::before,
+  .tl-chip.locked::before {
+    transform: scaleY(1);
+  }
+
+  .tl-chip.locked {
+    background: var(--highlight-bg);
+    border-color: var(--highlight);
+  }
+
+  .tl-chip-name {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: 0.01em;
+    transition: color 0.22s ease;
+  }
+
+  .tl-chip-eta {
+    font-size: 9px;
+    color: var(--text-mute);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tl-chip:hover .tl-chip-name,
+  .tl-chip.locked .tl-chip-name {
+    color: var(--highlight);
+  }
+
+  .tl-chip:hover .tl-chip-eta,
+  .tl-chip.locked .tl-chip-eta {
+    color: var(--amber);
+  }
+
+  .tl-caption {
+    margin-top: 10px;
+    font-size: 10px;
+    color: var(--text-mute);
+    letter-spacing: 0.06em;
+    text-align: right;
+  }
+
+  .tl-caption em {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    color: var(--amber);
+    font-size: 12px;
+    letter-spacing: 0;
+  }
+
+  @media (max-width: 880px) {
+    .tl-readout {
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px 0;
+      padding: 12px;
+    }
+    .ro-label { grid-column: 1 / -1; border-right: none; border-bottom: 1px solid var(--border); padding: 0 0 8px 0; }
+    .ro-name { grid-column: 1 / -1; padding: 4px 0; }
+    .ro-cp { border-left: none; border-top: 1px dotted var(--border); padding: 6px 0 2px; text-align: left; min-width: 0; }
+  }
+
+  @media (max-width: 520px) {
+    .tl-chips { grid-template-columns: repeat(2, 1fr); }
+    .tl-header { flex-direction: column; align-items: flex-start; gap: 4px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="brand">
+      <div class="glyph">Stack Readout</div>
+      <h1>character <em>readout</em></h1>
+      <div class="sub">Oral stack v2026.1 · 12 compounds · 3 dosing windows</div>
+    </div>
+    <div class="meta">
+      <div class="status"><span class="status-dot"></span> STACK ACTIVE</div>
+      <div>SUBJECT <span>DOBROMIR</span></div>
+      <div>AGE <span>24</span> · BF <span>15%</span></div>
+      <div>DAY <span>01</span> / STEADY-STATE <span>W6</span></div>
+    </div>
+  </header>
+
+  <div class="intro-v2" id="introDropdown" tabindex="0">
+    <div class="intro-v2-trigger-row">
+      <div class="intro-v2-label">// Introduction</div>
+      <div class="intro-v2-chevron">▾</div>
+    </div>
+    <div class="intro-v2-panel">
+      <div class="intro-v2-panel-inner">
+        <div class="intro-v2-body">
+          <div>
+            <div class="summary-label">Stack Intent</div>
+            <div class="summary-value">Most optimal for my goals</div>
+          </div>
+          <div class="summary-items">
+            <strong>Goals:</strong> Aesthetics · Sleep · Cognitive performance · Hormonal optimization · Longevity
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary">
+    <div>
+      <div class="summary-label">Composite Uplift</div>
+      <div class="summary-value">+27% avg across 7 axes</div>
+    </div>
+    <div class="summary-items">
+      <strong>Foundation:</strong> NAC · Creatine · Citicoline · Omega-3 · D3+K2 · Astaxanthin · Zinc · Boron · Mg-L-Threonate · Glycine · L-Theanine · Copper · Semax
+    </div>
+  </div>
+
+  <div class="section-label">Category Readout</div>
+  <div class="hover-hint">hover to expand · click compound to trace <span>↓</span></div>
+
+  <div class="stats" id="stats">
+
+    <!-- 01 COGNITION -->
+    <article class="stat" data-fill="72">
+      <div class="stat-header">
+        <div class="stat-index">01 / 07</div>
+        <div class="stat-title">
+          <div class="name">Cognition</div>
+          <div class="tagline">Verbal · focus · memory · processing</div>
+        </div>
+        <div class="stat-value">
+          <div class="num">+32%</div>
+          <div class="delta">vs baseline</div>
+        </div>
+      </div>
+      <div class="bar"><div class="bar-fill"></div></div>
+      <div class="detail"><div class="detail-inner">
+        <div class="detail-grid">
+          <div class="sub" data-c="citicoline semax"><span class="sub-name">Verbal fluency</span><span class="sub-val">+60%</span></div>
+          <div class="sub" data-c="citicoline semax nac"><span class="sub-name">Sustained focus</span><span class="sub-val">+30%</span></div>
+          <div class="sub" data-c="creatine mg citicoline"><span class="sub-name">Working memory</span><span class="sub-val">+30%</span></div>
+          <div class="sub" data-c="mg semax"><span class="sub-name">Long-term consolidation</span><span class="sub-val">+27%</span></div>
+          <div class="sub" data-c="citicoline semax"><span class="sub-name">Processing speed</span><span class="sub-val">+20%</span></div>
+          <div class="sub" data-c="creatine semax nac"><span class="sub-name">Resilience under sleep debt</span><span class="sub-val">+25%</span></div>
+          <div class="sources">
+            <div class="sources-label"><span>Contributing compounds</span></div>
+            <div class="sources-list">
+              <button class="chip" data-c="citicoline">Citicoline</button>
+              <button class="chip" data-c="semax">Semax</button>
+              <button class="chip" data-c="creatine">Creatine</button>
+              <button class="chip" data-c="mg">Mg-L-Threonate</button>
+              <button class="chip" data-c="nac">NAC</button>
+              <button class="chip" data-c="theanine">L-Theanine</button>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </article>
+
+    <!-- 02 PHYSICAL -->
+    <article class="stat" data-fill="40">
+      <div class="stat-header">
+        <div class="stat-index">02 / 07</div>
+        <div class="stat-title">
+          <div class="name">Physical</div>
+          <div class="tagline">Strength · power · endurance · recovery</div>
+        </div>
+        <div class="stat-value">
+          <div class="num">+14%</div>
+          <div class="delta">composite output</div>
+        </div>
+      </div>
+      <div class="bar"><div class="bar-fill"></div></div>
+      <div class="detail"><div class="detail-inner">
+        <div class="detail-grid">
+          <div class="sub" data-c="creatine"><span class="sub-name">Strength / power</span><span class="sub-val">+12%</span></div>
+          <div class="sub" data-c="creatine"><span class="sub-name">Explosive capacity</span><span class="sub-val">+15%</span></div>
+          <div class="sub" data-c="astaxanthin omega"><span class="sub-name">Endurance (lactate threshold)</span><span class="sub-val">+10%</span></div>
+          <div class="sub" data-c="omega creatine glycine"><span class="sub-name">Recovery between sessions</span><span class="sub-val">+20%</span></div>
+          <div class="sub" data-c="omega zinc"><span class="sub-name">Injury resistance</span><span class="sub-val">+8%</span></div>
+          <div class="sub" data-c="creatine"><span class="sub-name">Lean mass (6 mo trajectory)</span><span class="sub-val">+6%</span></div>
+          <div class="sources">
+            <div class="sources-label"><span>Contributing compounds</span></div>
+            <div class="sources-list">
+              <button class="chip" data-c="creatine">Creatine</button>
+              <button class="chip" data-c="omega">Omega-3</button>
+              <button class="chip" data-c="astaxanthin">Astaxanthin</button>
+              <button class="chip" data-c="glycine">Glycine</button>
+              <button class="chip" data-c="zinc">Zinc</button>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </article>
+
+    <!-- 03 HORMONAL -->
+    <article class="stat" data-fill="55">
+      <div class="stat-header">
+        <div class="stat-index">03 / 07</div>
+        <div class="stat-title">
+          <div class="name">Hormonal</div>
+          <div class="tagline">Testosterone · estradiol · cortisol</div>
+        </div>
+        <div class="stat-value">
+          <div class="num">+22%</div>
+          <div class="delta">free T uplift</div>
+        </div>
+      </div>
+      <div class="bar"><div class="bar-fill"></div></div>
+      <div class="detail"><div class="detail-inner">
+        <div class="detail-grid">
+          <div class="sub" data-c="boron zinc d3"><span class="sub-name">Free testosterone</span><span class="sub-val">+25%</span></div>
+          <div class="sub" data-c="boron"><span class="sub-name">Estradiol</span><span class="sub-val neg">-30%</span></div>
+          <div class="sub" data-c="boron"><span class="sub-name">SHBG (less binding)</span><span class="sub-val neg">-12%</span></div>
+          <div class="sub" data-c="boron"><span class="sub-name">DHT</span><span class="sub-val">+10%</span></div>
+          <div class="sub" data-c="theanine glycine"><span class="sub-name">Cortisol profile</span><span class="sub-val neg">-15%</span></div>
+          <div class="sub" data-c=""><span class="sub-name">Growth hormone pulse</span><span class="sub-val">baseline</span></div>
+          <div class="sources">
+            <div class="sources-label"><span>Contributing compounds</span></div>
+            <div class="sources-list">
+              <button class="chip" data-c="boron">Boron</button>
+              <button class="chip" data-c="zinc">Zinc</button>
+              <button class="chip" data-c="d3">Vitamin D3</button>
+              <button class="chip" data-c="theanine">L-Theanine</button>
+              <button class="chip" data-c="glycine">Glycine</button>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </article>
+
+    <!-- 04 SLEEP -->
+    <article class="stat" data-fill="68">
+      <div class="stat-header">
+        <div class="stat-index">04 / 07</div>
+        <div class="stat-title">
+          <div class="name">Sleep</div>
+          <div class="tagline">Onset · depth · recovery quality</div>
+        </div>
+        <div class="stat-value">
+          <div class="num">+28%</div>
+          <div class="delta">composite sleep score</div>
+        </div>
+      </div>
+      <div class="bar"><div class="bar-fill"></div></div>
+      <div class="detail"><div class="detail-inner">
+        <div class="detail-grid">
+          <div class="sub" data-c="glycine theanine"><span class="sub-name">Sleep onset speed</span><span class="sub-val">+45%</span></div>
+          <div class="sub" data-c="mg glycine"><span class="sub-name">Deep sleep (stage 3-4)</span><span class="sub-val">+25%</span></div>
+          <div class="sub" data-c="mg glycine"><span class="sub-name">REM quality</span><span class="sub-val">+20%</span></div>
+          <div class="sub" data-c="glycine mg"><span class="sub-name">Wake-time recovery</span><span class="sub-val">+25%</span></div>
+          <div class="sub" data-c="theanine"><span class="sub-name">Pre-sleep rumination</span><span class="sub-val neg">-30%</span></div>
+          <div class="sub" data-c="glycine"><span class="sub-name">Core temp drop (thermal prep)</span><span class="sub-val">measurable</span></div>
+          <div class="sources">
+            <div class="sources-label"><span>Contributing compounds</span></div>
+            <div class="sources-list">
+              <button class="chip" data-c="glycine">Glycine</button>
+              <button class="chip" data-c="mg">Mg-L-Threonate</button>
+              <button class="chip" data-c="theanine">L-Theanine</button>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </article>
+
+    <!-- 05 AESTHETICS -->
+    <article class="stat" data-fill="70">
+      <div class="stat-header">
+        <div class="stat-index">05 / 07</div>
+        <div class="stat-title">
+          <div class="name">Aesthetics</div>
+          <div class="tagline">Skin · collagen · hair · inflammation signature</div>
+        </div>
+        <div class="stat-value">
+          <div class="num">+35%</div>
+          <div class="delta">looksmaxx composite</div>
+        </div>
+      </div>
+      <div class="bar"><div class="bar-fill"></div></div>
+      <div class="detail"><div class="detail-inner">
+        <div class="detail-grid">
+          <div class="sub" data-c="nac zinc astaxanthin omega"><span class="sub-name">Skin clarity</span><span class="sub-val">+40%</span></div>
+          <div class="sub" data-c="ghk glycine astaxanthin"><span class="sub-name">Collagen density (12 mo)</span><span class="sub-val">+20%</span></div>
+          <div class="sub" data-c="astaxanthin"><span class="sub-name">UV damage resistance</span><span class="sub-val">+40%</span></div>
+          <div class="sub" data-c="omega astaxanthin nac"><span class="sub-name">Visible inflammation</span><span class="sub-val neg">-25%</span></div>
+          <div class="sub" data-c="omega"><span class="sub-name">Skin hydration / barrier</span><span class="sub-val">+12%</span></div>
+          <div class="sub" data-c="minoxidil"><span class="sub-name">Eyebrow density (localized)</span><span class="sub-val">+35%</span></div>
+          <div class="sources">
+            <div class="sources-label"><span>Contributing compounds</span></div>
+            <div class="sources-list">
+              <button class="chip" data-c="astaxanthin">Astaxanthin</button>
+              <button class="chip" data-c="nac">NAC</button>
+              <button class="chip" data-c="omega">Omega-3</button>
+              <button class="chip" data-c="zinc">Zinc</button>
+              <button class="chip" data-c="ghk">GHK-Cu</button>
+              <button class="chip" data-c="minoxidil">Minoxidil</button>
+              <button class="chip" data-c="glycine">Glycine</button>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </article>
+
+    <!-- 06 DEFENSE -->
+    <article class="stat" data-fill="80">
+      <div class="stat-header">
+        <div class="stat-index">06 / 07</div>
+        <div class="stat-title">
+          <div class="name">Defense</div>
+          <div class="tagline">Antioxidant · immune · anti-inflammation</div>
+        </div>
+        <div class="stat-value">
+          <div class="num">+40%</div>
+          <div class="delta">resilience composite</div>
+        </div>
+      </div>
+      <div class="bar"><div class="bar-fill"></div></div>
+      <div class="detail"><div class="detail-inner">
+        <div class="detail-grid">
+          <div class="sub" data-c="nac astaxanthin d3"><span class="sub-name">Total antioxidant capacity</span><span class="sub-val">+50%</span></div>
+          <div class="sub" data-c="nac"><span class="sub-name">Glutathione (main AO)</span><span class="sub-val">+55%</span></div>
+          <div class="sub" data-c="zinc d3 nac"><span class="sub-name">Immune response speed</span><span class="sub-val">+25%</span></div>
+          <div class="sub" data-c="omega astaxanthin nac"><span class="sub-name">Systemic inflammation (CRP)</span><span class="sub-val neg">-25%</span></div>
+          <div class="sub" data-c="nac"><span class="sub-name">Liver detox throughput</span><span class="sub-val">+25%</span></div>
+          <div class="sub" data-c="semax"><span class="sub-name">Stress resilience under load</span><span class="sub-val">+20%</span></div>
+          <div class="sources">
+            <div class="sources-label"><span>Contributing compounds</span></div>
+            <div class="sources-list">
+              <button class="chip" data-c="nac">NAC</button>
+              <button class="chip" data-c="astaxanthin">Astaxanthin</button>
+              <button class="chip" data-c="d3">Vitamin D3</button>
+              <button class="chip" data-c="omega">Omega-3</button>
+              <button class="chip" data-c="zinc">Zinc</button>
+              <button class="chip" data-c="semax">Semax</button>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </article>
+
+    <!-- 07 LONGEVITY -->
+    <article class="stat" data-fill="48">
+      <div class="stat-header">
+        <div class="stat-index">07 / 07</div>
+        <div class="stat-title">
+          <div class="name">Longevity</div>
+          <div class="tagline">Trajectory bend · mitochondrial · cardio · aging rate</div>
+        </div>
+        <div class="stat-value">
+          <div class="num">+20%</div>
+          <div class="delta">trajectory bend</div>
+        </div>
+      </div>
+      <div class="bar"><div class="bar-fill"></div></div>
+      <div class="detail"><div class="detail-inner">
+        <div class="detail-grid">
+          <div class="sub" data-c="creatine nac"><span class="sub-name">Mitochondrial function</span><span class="sub-val">+20%</span></div>
+          <div class="sub" data-c="omega d3"><span class="sub-name">Cardiovascular disease risk</span><span class="sub-val neg">-30%</span></div>
+          <div class="sub" data-c="omega mg"><span class="sub-name">Cognitive aging decline rate</span><span class="sub-val neg">-20%</span></div>
+          <div class="sub" data-c="astaxanthin nac"><span class="sub-name">Skin aging decline rate</span><span class="sub-val neg">-20%</span></div>
+          <div class="sub" data-c="d3"><span class="sub-name">Arterial calcification risk</span><span class="sub-val neg">-40%</span></div>
+          <div class="sub" data-c="nac astaxanthin omega"><span class="sub-name">Cellular senescence markers</span><span class="sub-val neg">slight</span></div>
+          <div class="sources">
+            <div class="sources-label"><span>Contributing compounds</span></div>
+            <div class="sources-list">
+              <button class="chip" data-c="omega">Omega-3</button>
+              <button class="chip" data-c="d3">D3+K2</button>
+              <button class="chip" data-c="nac">NAC</button>
+              <button class="chip" data-c="astaxanthin">Astaxanthin</button>
+              <button class="chip" data-c="creatine">Creatine</button>
+              <button class="chip" data-c="mg">Mg-L-Threonate</button>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </article>
+
+  </div>
+
+  <div class="section-label" style="margin-top:64px;">Buff Timeline</div>
+
+  <div class="timeline-v2">
+    <div class="tl-header">
+      <div class="tl-label">Cumulative Effect Buildup · W0 → W16</div>
+      <div class="tl-hint">full stack shown by default <span>hover a compound to trace</span></div>
+    </div>
+
+    <div class="tl-chart" id="tlChart"></div>
+
+    <div class="tl-readout" id="tlReadout">
+      <div class="ro-label">Currently Tracing</div>
+      <div class="ro-name" id="roName">Full Stack · 15 compounds</div>
+      <div class="ro-cp ro-cp-input-wrap">
+        <div class="ro-cp-pct">NOW · DAY <input type="number" id="roNowInput" min="0" max="365" value="1" aria-label="Current day on stack"></div>
+        <div class="ro-cp-val now-val" id="roNow">--</div>
+      </div>
+      <div class="ro-cp">
+        <div class="ro-cp-pct">25% at</div>
+        <div class="ro-cp-val" id="ro25">--</div>
+      </div>
+      <div class="ro-cp">
+        <div class="ro-cp-pct">50% at</div>
+        <div class="ro-cp-val" id="ro50">--</div>
+      </div>
+      <div class="ro-cp">
+        <div class="ro-cp-pct">75% at</div>
+        <div class="ro-cp-val" id="ro75">--</div>
+      </div>
+      <div class="ro-cp">
+        <div class="ro-cp-pct">95% at</div>
+        <div class="ro-cp-val" id="ro95">--</div>
+      </div>
+    </div>
+
+    <div class="tl-chips" id="tlChips"></div>
+
+    <div class="tl-caption">
+      <em>Sigmoid saturation model.</em> Calibrated: 24y M · 75kg · full-body 3×/wk · dosing as prescribed. Individual response ±30%.
+    </div>
+  </div>
+
+  <footer>
+    <div><em>Effect sizes reflect typical responder.</em> Individual response varies ±30%.</div>
+    <div>&copy; DOBROMIR / 2026</div>
+  </footer>
+
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // Intro dropdown · tap-toggle on touch devices (hover works on desktop via CSS)
+    const intro = document.getElementById("introDropdown");
+    if (intro && matchMedia("(hover: none)").matches) {
+      const trigger = intro.querySelector(".intro-v2-trigger-row") || intro;
+      trigger.addEventListener("click", (e) => {
+        e.stopPropagation();
+        intro.classList.toggle("open");
+      });
+      document.addEventListener("click", (e) => {
+        if (!intro.contains(e.target)) intro.classList.remove("open");
+      });
+    }
+
+    const stats = document.querySelectorAll(".stat");
+
+    // Animate bars in
+    stats.forEach((s, i) => {
+      const fill = s.querySelector(".bar-fill");
+      const pct = s.getAttribute("data-fill") || "50";
+      setTimeout(() => { fill.style.width = pct + "%"; }, 400 + i * 90);
+    });
+
+    // Mobile tap-to-expand
+    const isTouch = matchMedia("(hover: none)").matches;
+    if (isTouch) {
+      stats.forEach(s => {
+        s.addEventListener("click", (e) => {
+          if (e.target.closest(".chip")) return;
+          stats.forEach(o => { if (o !== s) o.classList.remove("open"); });
+          s.classList.toggle("open");
+        });
+      });
+    }
+
+    // CHIP CLICK: trace compound → highlight matching effects, dim the rest
+    document.querySelectorAll(".chip").forEach(chip => {
+      chip.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const stat = chip.closest(".stat");
+        const compound = chip.getAttribute("data-c");
+        const wasActive = chip.classList.contains("active");
+
+        // Reset all chips + subs in this stat card
+        stat.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+        stat.querySelectorAll(".sub").forEach(s => {
+          s.classList.remove("highlight");
+          s.classList.remove("dimmed");
+        });
+
+        // Second click on same chip = toggle off, stay reset
+        if (wasActive) return;
+
+        // Activate clicked chip, highlight contributing subs, dim the rest
+        chip.classList.add("active");
+        stat.querySelectorAll(".sub").forEach(s => {
+          const subCompounds = (s.getAttribute("data-c") || "").split(" ").filter(Boolean);
+          if (subCompounds.includes(compound)) {
+            s.classList.add("highlight");
+          } else {
+            s.classList.add("dimmed");
+          }
+        });
+      });
+    });
+
+    /* ============================================================= */
+    /* ==========  UPGRADED BUFF TIMELINE · INIT  ================== */
+    /* ============================================================= */
+
+    // --- Compound kinetic parameters ------------------------------
+    // half  = days to hit 50% steady-state effect
+    // full  = days to hit 95% steady-state effect (asymptote)
+    // Calibrated from published PK data + biomarker studies.
+    const COMPOUNDS = [
+      { id: "theanine",    name: "L-Theanine",     half: 0.05, full: 0.3,  note: "same-day"   },
+      { id: "glycine",     name: "Glycine",        half: 0.2,  full: 1,    note: "same-day"   },
+      { id: "semax",       name: "Semax",          half: 2,    full: 14,   note: "intranasal" },
+      { id: "boron",       name: "Boron",          half: 7,    full: 21,   note: "hormonal"   },
+      { id: "creatine",    name: "Creatine",       half: 8,    full: 21,   note: "5g/d"       },
+      { id: "citicoline",  name: "Citicoline",     half: 7,    full: 28,   note: "verbal"     },
+      { id: "mg",          name: "Mg-L-Threonate", half: 10,   full: 28,   note: "brain Mg"   },
+      { id: "nac",         name: "NAC",            half: 10,   full: 28,   note: "glutathione"},
+      { id: "astaxanthin", name: "Astaxanthin",    half: 14,   full: 42,   note: "tissue"     },
+      { id: "zinc",        name: "Zinc",           half: 14,   full: 42,   note: "tissue"     },
+      { id: "copper",      name: "Copper",         half: 14,   full: 42,   note: "co-factor"  },
+      { id: "omega",       name: "Omega-3",        half: 28,   full: 84,   note: "RBC membrane"},
+      { id: "d3",          name: "D3+K2",          half: 28,   full: 84,   note: "serum 25OH" },
+      { id: "ghk",         name: "GHK-Cu",         half: 42,   full: 120,  note: "collagen"   },
+      { id: "minoxidil",   name: "Minoxidil",      half: 56,   full: 112,  note: "hair cycle" },
+    ];
+
+    // --- Chart geometry -------------------------------------------
+    const CHART_DAYS = 112; // 16 weeks
+    let NOW_DAY = 1;        // dynamic — driven by the day input in the readout
+    const W = 1000, H = 380;
+    const PAD = { l: 60, r: 30, t: 28, b: 58 };
+    const innerW = W - PAD.l - PAD.r;
+    const innerH = H - PAD.t - PAD.b;
+
+    const toX = d => PAD.l + (d / CHART_DAYS) * innerW;
+    const toY = p => PAD.t + (1 - p) * innerH;
+
+    // --- Saturation model -----------------------------------------
+    // Sigmoid: y(half)=0.5, y(full)=0.95 by construction.
+    function sat(t, half, full) {
+      const span = Math.max(full - half, 0.1);
+      const k = Math.log(19) / span;
+      return 1 / (1 + Math.exp(-k * (t - half)));
+    }
+
+    // Inverse: at what day does compound hit target saturation y?
+    function daysFor(half, full, y) {
+      const span = Math.max(full - half, 0.1);
+      const k = Math.log(19) / span;
+      return half - Math.log(1 / y - 1) / k;
+    }
+
+    // --- Formatting helpers ---------------------------------------
+    function fmtDay(d) {
+      if (d < 0)     return "--";
+      if (d < 1)     return "D<1";
+      if (d < 7)     return "D" + Math.round(d);
+      if (d <= 112)  return "W" + (d / 7).toFixed(d < 14 ? 1 : 0).replace(".0", "");
+      return "W" + (d / 7).toFixed(0) + "+";
+    }
+    function fmtPct(p) { return Math.round(p * 100) + "%"; }
+
+    // --- Build path string for one compound -----------------------
+    function pathFor(c, samples = 120) {
+      const pts = [];
+      for (let i = 0; i <= samples; i++) {
+        const t = (i / samples) * CHART_DAYS;
+        pts.push(toX(t).toFixed(1) + "," + toY(sat(t, c.half, c.full)).toFixed(1));
+      }
+      return "M" + pts.join(" L");
+    }
+
+    // Aggregate = mean across all compounds at each sample
+    function aggregatePath(samples = 120) {
+      const pts = [];
+      for (let i = 0; i <= samples; i++) {
+        const t = (i / samples) * CHART_DAYS;
+        let sum = 0;
+        for (const c of COMPOUNDS) sum += sat(t, c.half, c.full);
+        pts.push(toX(t).toFixed(1) + "," + toY(sum / COMPOUNDS.length).toFixed(1));
+      }
+      return "M" + pts.join(" L");
+    }
+
+    // --- Render the SVG chart -------------------------------------
+    const chart = document.getElementById("tlChart");
+    const xWeeks = [0, 1, 2, 4, 6, 8, 10, 12, 14, 16];
+    const yLevels = [0, 0.25, 0.5, 0.75, 1];
+
+    // Build gridlines
+    let gridX = "";
+    xWeeks.forEach(w => {
+      const x = toX(w * 7);
+      gridX += `<line class="grid-line" x1="${x}" y1="${PAD.t}" x2="${x}" y2="${PAD.t + innerH}" />
+        <text class="axis-tick" x="${x}" y="${PAD.t + innerH + 16}" text-anchor="middle">W${w}</text>`;
+    });
+    let gridY = "";
+    yLevels.forEach(p => {
+      const y = toY(p);
+      gridY += `<line class="grid-line" x1="${PAD.l}" y1="${y}" x2="${PAD.l + innerW}" y2="${y}" />
+        <text class="axis-tick" x="${PAD.l - 10}" y="${y + 3}" text-anchor="end">${Math.round(p * 100)}%</text>`;
+    });
+
+    // Build compound paths
+    let lines = "";
+    COMPOUNDS.forEach(c => {
+      lines += `<path class="compound-line" data-c="${c.id}" d="${pathFor(c)}"></path>`;
+    });
+
+    // Aggregate path
+    const aggPath = `<path class="aggregate-line" d="${aggregatePath()}"></path>`;
+
+    // NOW vertical marker (position + label updated dynamically from the day input)
+    const nowMarker = `
+      <line id="tlNowLine" class="now-line" x1="0" y1="${PAD.t}" x2="0" y2="${PAD.t + innerH}"></line>
+      <text id="tlNowLabel" class="now-label" x="0" y="${PAD.t - 8}" text-anchor="middle">NOW · D1</text>
+    `;
+
+    // Axis labels
+    const xLabel = `<text class="axis-label" x="${PAD.l + innerW / 2}" y="${H - 10}" text-anchor="middle">Weeks on stack</text>`;
+    const yLabel = `<text class="axis-label" transform="translate(18, ${PAD.t + innerH / 2}) rotate(-90)" text-anchor="middle">Saturation</text>`;
+
+    // Axes
+    const axes = `
+      <line class="grid-axis" x1="${PAD.l}" y1="${PAD.t + innerH}" x2="${PAD.l + innerW}" y2="${PAD.t + innerH}"></line>
+      <line class="grid-axis" x1="${PAD.l}" y1="${PAD.t}" x2="${PAD.l}" y2="${PAD.t + innerH}"></line>
+    `;
+
+    // Checkpoint container (populated on hover)
+    const cpContainer = `<g class="checkpoints" id="tlCheckpoints"></g>`;
+
+    chart.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+      ${gridX}
+      ${gridY}
+      ${axes}
+      ${xLabel}
+      ${yLabel}
+      ${lines}
+      ${aggPath}
+      ${nowMarker}
+      ${cpContainer}
+    </svg>`;
+
+    const svg = chart.querySelector("svg");
+    const cpGroup = svg.querySelector("#tlCheckpoints");
+
+    // --- Render chips ---------------------------------------------
+    const chipsRoot = document.getElementById("tlChips");
+    // Show "ETA" as the day each compound hits 95% (its "done" marker)
+    chipsRoot.innerHTML = COMPOUNDS.map(c => {
+      const eta = daysFor(c.half, c.full, 0.95);
+      const etaStr = fmtDay(eta);
+      return `<button class="tl-chip" data-c="${c.id}">
+        <div class="tl-chip-name">${c.name}</div>
+        <div class="tl-chip-eta">95% @ ${etaStr} · ${c.note}</div>
+      </button>`;
+    }).join("");
+
+    // --- Readout handling -----------------------------------------
+    const roName = document.getElementById("roName");
+    const roNow  = document.getElementById("roNow");
+    const ro25   = document.getElementById("ro25");
+    const ro50   = document.getElementById("ro50");
+    const ro75   = document.getElementById("ro75");
+    const ro95   = document.getElementById("ro95");
+
+    function defaultReadout() {
+      // Aggregate now value
+      let sum = 0;
+      for (const c of COMPOUNDS) sum += sat(NOW_DAY, c.half, c.full);
+      const now = sum / COMPOUNDS.length;
+      roName.textContent = `Full Stack · ${COMPOUNDS.length} compounds`;
+      roNow.textContent = fmtPct(now);
+      roNow.className = "ro-cp-val now-val";
+
+      // Aggregate hits 25/50/75/95% by sampling
+      const targets = [0.25, 0.5, 0.75, 0.95];
+      const hits = targets.map(t => null);
+      for (let d = 0; d <= CHART_DAYS; d += 0.5) {
+        let s = 0;
+        for (const c of COMPOUNDS) s += sat(d, c.half, c.full);
+        const avg = s / COMPOUNDS.length;
+        targets.forEach((t, i) => { if (hits[i] === null && avg >= t) hits[i] = d; });
+      }
+      [ro25, ro50, ro75, ro95].forEach((el, i) => {
+        el.textContent = hits[i] === null ? ">W16" : fmtDay(hits[i]);
+        el.className = "ro-cp-val " + (hits[i] !== null && hits[i] <= NOW_DAY ? "past" : "future");
+      });
+    }
+
+    function compoundReadout(c) {
+      const nowSat = sat(NOW_DAY, c.half, c.full);
+      roName.textContent = c.name;
+      roNow.textContent = fmtPct(nowSat);
+      roNow.className = "ro-cp-val now-val";
+
+      const targets = [0.25, 0.5, 0.75, 0.95];
+      [ro25, ro50, ro75, ro95].forEach((el, i) => {
+        const t = targets[i];
+        if (nowSat >= t) {
+          // Already passed this checkpoint
+          const d = daysFor(c.half, c.full, t);
+          el.textContent = fmtDay(d);
+          el.className = "ro-cp-val past";
+        } else {
+          const d = daysFor(c.half, c.full, t);
+          el.textContent = d > CHART_DAYS ? ">W16" : fmtDay(d);
+          el.className = "ro-cp-val future";
+        }
+      });
+    }
+
+    // --- Checkpoint markers on chart ------------------------------
+    function drawCheckpoints(c) {
+      const targets = [0.25, 0.5, 0.75, 0.95];
+      let html = "";
+      targets.forEach(t => {
+        const d = daysFor(c.half, c.full, t);
+        if (d < 0 || d > CHART_DAYS) return;
+        const x = toX(d);
+        const y = toY(t);
+        // Dashed guide line to x-axis
+        html += `<line class="cp-line" x1="${x}" y1="${y}" x2="${x}" y2="${PAD.t + innerH}"></line>`;
+        html += `<line class="cp-line" x1="${PAD.l}" y1="${y}" x2="${x}" y2="${y}"></line>`;
+        // Dot
+        html += `<circle class="cp-dot-outer" cx="${x}" cy="${y}" r="4.5"></circle>`;
+        html += `<circle class="cp-dot-inner" cx="${x}" cy="${y}" r="2"></circle>`;
+        // Label — place above dot, nudge left at edges
+        const pctLabel = Math.round(t * 100) + "%";
+        const dayLabel = fmtDay(d);
+        const labelX = x > W - 90 ? x - 8 : x + 8;
+        const anchor = x > W - 90 ? "end" : "start";
+        html += `<text class="cp-label" x="${labelX}" y="${y - 9}" text-anchor="${anchor}">${pctLabel} @ ${dayLabel}</text>`;
+      });
+      cpGroup.innerHTML = html;
+    }
+
+    function clearCheckpoints() { cpGroup.innerHTML = ""; }
+
+    // --- Interaction state ----------------------------------------
+    let lockedChip = null; // DOM element or null
+
+    function traceCompound(id) {
+      const c = COMPOUNDS.find(x => x.id === id);
+      if (!c) return;
+      chart.classList.add("traced");
+      // Highlight one path
+      svg.querySelectorAll(".compound-line").forEach(p => {
+        p.classList.toggle("active", p.getAttribute("data-c") === id);
+      });
+      drawCheckpoints(c);
+      compoundReadout(c);
+    }
+
+    function resetTrace() {
+      chart.classList.remove("traced");
+      svg.querySelectorAll(".compound-line.active").forEach(p => p.classList.remove("active"));
+      clearCheckpoints();
+      defaultReadout();
+    }
+
+    // --- Chip event wiring ----------------------------------------
+    const chips = chipsRoot.querySelectorAll(".tl-chip");
+    chips.forEach(chip => {
+      const id = chip.getAttribute("data-c");
+
+      chip.addEventListener("mouseenter", () => {
+        if (lockedChip) return;
+        traceCompound(id);
+      });
+
+      chip.addEventListener("mouseleave", () => {
+        if (lockedChip) return;
+        resetTrace();
+      });
+
+      chip.addEventListener("click", () => {
+        if (lockedChip === chip) {
+          // Unlock
+          chip.classList.remove("locked");
+          lockedChip = null;
+          resetTrace();
+        } else {
+          // Switch lock
+          chips.forEach(c => c.classList.remove("locked"));
+          chip.classList.add("locked");
+          lockedChip = chip;
+          traceCompound(id);
+        }
+      });
+    });
+
+    // --- Dynamic NOW marker · input-driven ------------------------
+    const nowLine  = svg.querySelector("#tlNowLine");
+    const nowLabel = svg.querySelector("#tlNowLabel");
+    const nowInput = document.getElementById("roNowInput");
+
+    function formatNowLabel(day) {
+      if (day <= 0)    return "NOW · D0";
+      if (day <= 13)   return "NOW · D" + day;
+      const w = day / 7;
+      const str = Number.isInteger(w) ? w.toString() : w.toFixed(1);
+      return "NOW · W" + str + (day > CHART_DAYS ? "+" : "");
+    }
+
+    function refreshReadout() {
+      const activeLine = svg.querySelector(".compound-line.active");
+      if (activeLine) {
+        const c = COMPOUNDS.find(x => x.id === activeLine.getAttribute("data-c"));
+        if (c) { compoundReadout(c); return; }
+      }
+      defaultReadout();
+    }
+
+    function updateNow() {
+      const raw = parseInt(nowInput.value, 10);
+      NOW_DAY = isNaN(raw) ? 0 : Math.max(0, raw);
+      const displayDay = Math.min(NOW_DAY, CHART_DAYS);
+      const x = toX(displayDay);
+      nowLine.setAttribute("x1", x);
+      nowLine.setAttribute("x2", x);
+      nowLabel.setAttribute("x", x);
+      nowLabel.textContent = formatNowLabel(NOW_DAY);
+      refreshReadout();
+    }
+
+    nowInput.addEventListener("input", updateNow);
+    nowInput.addEventListener("change", updateNow);
+
+    // Initialize
+    updateNow();
+  });
+</script>
+</body>
+</html>
